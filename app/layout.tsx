@@ -4,34 +4,42 @@ import AuthNavClient from "./components/AuthNavClient";
 import NavLinksClient from "./components/NavLinksClient";
 import type { ReactNode } from "react";
 
-
 export const metadata = {
-title: "ESG Game - Full",
-description: "Minimal ESG training game with Supabase + Next.js + OpenAI"
+  title: "ESG Game - Full",
+  description: "Minimal ESG training game with Supabase + Next.js + OpenAI"
 };
 
-
 export default function RootLayout({ children }: { children: ReactNode }) {
-return (
-<html lang="en">
-<body>
-<nav className="border-b border-white/6 bg-black/20">
-	<div className="container topbar">
-		<div className="flex items-center gap-4">
-			<Link href="/" className="brand">ESG Game</Link>
-		</div>
-		<div className="nav-links">
-			<NavLinksClient />
-		</div>
-		<div className="text-sm">
-			<AuthNavClient />
-		</div>
-	</div>
-</nav>
-<main className="container">{children}</main>
-</body>
-</html>
-);
-}
+  return (
+    <html lang="en">
+      <body>
+        <div className="app-shell">
+          <nav className="app-nav">
+            <div className="container topbar">
+              <div>
+                <Link href="/" className="brand">
+                  ESG Game
+                  <span className="brand-subtitle">Learn & act on ESG scenarios</span>
+                </Link>
+              </div>
+              <div className="nav-links">
+                <NavLinksClient />
+              </div>
+              <div className="text-sm">
+                <AuthNavClient />
+              </div>
+            </div>
+          </nav>
 
-// Auth UI implemented in client component at ./components/AuthNavClient.tsx
+          <main className="container content-area">{children}</main>
+
+          <footer className="footer">
+            <div className="container">
+              Built with Next.js, Supabase & OpenAI · ESG Game © {new Date().getFullYear()}
+            </div>
+          </footer>
+        </div>
+      </body>
+    </html>
+  );
+}

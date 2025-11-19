@@ -30,11 +30,11 @@ export default function EmissionsDragDrop({ onWin }: { onWin?: () => void }) {
   }
 
   function onDrop(e: React.DragEvent, sourceId: string) {
+    e.preventDefault();
     const upId = e.dataTransfer.getData("text/plain");
     if (!upId) return;
     setApplied((a) => {
       const arr = a[sourceId] ? [...a[sourceId]] : [];
-      // prevent duplicate application of same upgrade to the same source
       if (!arr.includes(upId)) arr.push(upId);
       return { ...a, [sourceId]: arr };
     });
@@ -60,60 +60,88 @@ export default function EmissionsDragDrop({ onWin }: { onWin?: () => void }) {
 
   function check() {
     const total = computeTotal();
-    // success if total emissions reduced below threshold (e.g., 60)
     if (total <= 60) {
       setShowConfetti(true);
       onWin?.();
       setTimeout(() => setShowConfetti(false), 3500);
-      alert(`Great job! Total emissions: ${total} tCO2e — you win!`);
+      alert(`Great job! Total emissions: ${total} tCO₂e — you win!`);
     } else {
-      alert(`Total emissions: ${total} tCO2e — keep optimizing.`);
+      alert(`Total emissions: ${total} tCO₂e — keep optimizing.`);
     }
   }
 
+  const totalEmissions = computeTotal();
+
   return (
-    <div className="space-y-4">
+    <div className="mini-game-card card-animated">
       <Confetti show={showConfetti} />
-      <div className="font-semibold">Emissions Optimization</div>
-      <div className="text-sm text-white/60">Drag upgrades onto emission sources to reduce their emissions.</div>
-
-      <div className="grid grid-cols-2 gap-4">
+      <div className="mini-game-header">
         <div>
-          <div className="mb-2 font-medium">Available Upgrades</div>
-          <div className="space-y-2">
-            {upgrades.map((u) => (
-              <div key={u.id} draggable onDragStart={(e) => onDragStart(e, u.id)} className="p-2 bg-white/6 rounded cursor-grab">{u.name} (-{u.reduce})</div>
-            ))}
-          </div>
+          <p className="mini-game-label">Mini-game</p>
+          <h4 className="mini-game-title">Emissions Optimizer</h4>
         </div>
+        <span className="score-chip">Target: ≤ 60 tCO₂e</span>
+      </div>
+      <p className="mini-game-copy">
+        Drag efficiency upgrades onto each source to drop the combined footprint below 60 tCO₂e.
+      </p>
 
-        <div>
-          <div className="mb-2 font-medium">Sources</div>
-          <div className="space-y-2">
-            {sources.map((s) => (
-              <div key={s.id} onDragOver={allowDrop} onDrop={(e) => onDrop(e, s.id)} className="p-3 bg-white/3 rounded">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-semibold">{s.name}</div>
-                    <div className="text-xs text-white/60">Base: {s.emission} tCO2e</div>
-                  </div>
-                  <div className="text-sm">Applied: {(applied[s.id] ?? []).length}</div>
-                </div>
-                <div className="mt-2 text-xs">
-                  {(applied[s.id] ?? []).map((uid) => {
-                    const u = upgrades.find((x) => x.id === uid);
-                    return <div key={uid} className="inline-block bg-white/6 px-2 py-0.5 rounded mr-2 text-xs">{u?.name}</div>;
-                  })}
-                </div>
+      <div className="mini-game-layout">
+        <div className="mini-game-sidecard">
+          <p className="text-sm font-semibold text-white mb-2">Available upgrades</p>
+          <div className="upgrade-list">
+            {upgrades.map((u) => (
+              <div
+                key={u.id}
+                draggable
+                onDragStart={(e) => onDragStart(e, u.id)}
+                className="upgrade-chip"
+              >
+                <span>{u.name}</span>
+                <span className="text-xs text-white/70">-{u.reduce} tCO₂e</span>
               </div>
             ))}
           </div>
+          <p className="text-xs text-white/60 mt-3">Tip: Apply multiple upgrades to the same source for bigger gains.</p>
+        </div>
+
+        <div className="mini-game-list">
+          {sources.map((s) => (
+            <div
+              key={s.id}
+              onDragOver={allowDrop}
+              onDrop={(e) => onDrop(e, s.id)}
+              className="droppable-row"
+            >
+              <div>
+                <div className="item-name">{s.name}</div>
+                <div className="text-xs text-white/60">Base: {s.emission} tCO₂e</div>
+              </div>
+              <div className="applied-upgrades">
+                {(applied[s.id] ?? []).length === 0 && (
+                  <span className="text-xs text-white/40">Drag upgrade here</span>
+                )}
+                {(applied[s.id] ?? []).map((uid) => {
+                  const upgrade = upgrades.find((x) => x.id === uid);
+                  return (
+                    <span key={uid} className="game-pill active">
+                      {upgrade?.name}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="mt-3">
-        <button onClick={check} className="bg-green-500 px-4 py-2 rounded">Check Optimization</button>
+      <div className="mini-game-actions">
+        <span className="score-chip">Current total: {totalEmissions} tCO₂e</span>
+        <button onClick={check} className="btn btn-primary">
+          Check optimization
+        </button>
       </div>
     </div>
   );
 }
+

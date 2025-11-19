@@ -6,12 +6,12 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const url = req.nextUrl.pathname;
 
-  // Allow public API endpoints
-  const publicApiPaths = ["/api/ai", "/api/health", "/api/public"];
-  if (url.startsWith("/api/") && publicApiPaths.some((p) => url.startsWith(p))) return NextResponse.next();
+// Allow public API endpoints (health checks + auth helpers)
+const publicApiPaths = ["/api/health", "/api/auth", "/api/public"];
+if (url.startsWith("/api/") && publicApiPaths.some((p) => url.startsWith(p))) return NextResponse.next();
 
-  // Simple auth check for API and protected pages (/dashboard, /ai)
-  const protectedPagePrefixes = ["/dashboard", "/ai"];
+// Simple auth check for API and protected pages
+const protectedPagePrefixes = ["/dashboard", "/ai", "/game", "/leaderboard", "/scenarios"];
 
   const auth = req.headers.get("authorization");
   const cookieToken = req.cookies.get("sb-access-token");
@@ -36,5 +36,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/dashboard", "/dashboard/:path*", "/ai", "/ai/:path*"]
+  matcher: ["/api/:path*", "/dashboard", "/dashboard/:path*", "/ai", "/ai/:path*", "/game", "/leaderboard", "/leaderboard/:path*", "/scenarios", "/scenarios/:path*"]
 };

@@ -44,40 +44,50 @@ export default function LoginPage() {
 	}
 
 	return (
-		<div className="max-w-md mx-auto mt-10 card">
-			<h2 className="text-2xl font-semibold mb-4">{mode === "signin" ? "Sign in" : "Create account"}</h2>
-			<form onSubmit={submit} className="space-y-3">
-				<input
-					className="w-full p-2 bg-white/6 rounded"
-					placeholder="email"
-					value={email}
-					onChange={(e) => setEmail(e.target.value)}
-					required
-				/>
+		<div className="split-panel mt-8">
+			<div className="card card-animated">
+				<h2 className="text-3xl font-semibold mb-2">{mode === "signin" ? "Welcome back" : "Create your account"}</h2>
+				<p className="text-white/70 mb-6">Secure Supabase auth with automatic server cookies for API access.</p>
+				<form onSubmit={submit} className="space-y-4">
+					<input
+						placeholder="Work email"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+						required
+					/>
 
-				<input
-					className="w-full p-2 bg-white/6 rounded"
-					placeholder="password"
-					type="password"
-					value={password}
-					onChange={(e) => setPassword(e.target.value)}
-					required
-				/>
+					<input
+						placeholder="Password"
+						type="password"
+						value={password}
+						onChange={(e) => setPassword(e.target.value)}
+						required
+					/>
 
-				<div className="flex gap-3">
-					<button className="bg-yellow-400 text-black px-4 py-2 rounded">
-						{mode === "signin" ? "Sign in" : "Create"}
-					</button>
+					<div className="flex flex-col sm:flex-row gap-3">
+						<button className="btn btn-primary w-full sm:w-auto">
+							{mode === "signin" ? "Sign in" : "Create account"}
+						</button>
 
-					<button
-						type="button"
-						className="underline"
-						onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-					>
-						{mode === "signin" ? "Create account" : "Have an account?"}
-					</button>
-				</div>
-			</form>
+						<button
+							type="button"
+							className="btn btn-ghost w-full sm:w-auto"
+							onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+						>
+							{mode === "signin" ? "Need an account?" : "Have an account?"}
+						</button>
+					</div>
+				</form>
+			</div>
+
+			<div className="card card-animated">
+				<h3 className="text-xl font-semibold mb-2">Why sign in?</h3>
+				<ul className="space-y-2 text-white/75 text-sm">
+					<li>• Save ESG sessions and resume progress across devices.</li>
+					<li>• Submit live leaderboard scores and collect achievement badges.</li>
+					<li>• Sync with Supabase auth, keeping tokens in secure HttpOnly cookies.</li>
+				</ul>
+			</div>
 		</div>
 	);
 }

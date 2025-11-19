@@ -2,10 +2,24 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { v4 as uuidv4 } from "uuid";
-import { getOptionalUserFromRequest } from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/auth";
+
+function summarizeForLog(text: string, max = 200) {
+  if (!text) return "[empty]";
+  const normalized = String(text).replace(/\s+/g, " ").trim();
+  if (normalized.length <= max) return normalized;
+  return `${normalized.slice(0, max)}… (truncated ${normalized.length - max} chars)`;
+}
 
 export async function POST(req: Request) {
   try {
+    let user: any = null;
+    try {
+      ({ user } = await getUserFromRequest(req));
+    } catch (authErr: any) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const action = body?.action ?? "analyze"; // analyze | simulate | vet_supplier
     const query = body?.query ?? body?.prompt ?? "";
@@ -67,12 +81,20 @@ If a value is uncertain, provide your best numeric estimate. Input: ${query}`;
       }
     }
 
-    // Log query + response to DB when possible. Prefer authenticated user if present.
+    // Log query + response summary to DB when possible (authenticated users only).
     try {
-      if (typeof process !== "undefined" && process.env?.SUPABASE_SERVICE_ROLE_KEY) {
-        const opt = await getOptionalUserFromRequest(req);
-        const userId = opt?.user?.id ?? body?.userId ?? null;
-        await supabaseAdmin.from("ai_logs").insert([{ id: uuidv4(), user_id: userId, prompt: prompt, response: text }]);
+      const userId = user?.id ?? (user as any)?.user?.id ?? null;
+      if (typeof process !== "undefined" && process.env?.SUPABASE_SERVICE_ROLE_KEY && userId) {
+        await supabaseAdmin
+          .from("ai_logs")
+          .insert([
+            {
+              id: uuidv4(),
+              user_id: userId,
+              prompt: summarizeForLog(prompt),
+              response: summarizeForLog(text),
+            },
+          ]);
       }
     } catch (dbErr) {
       console.error("ai log error:", dbErr);

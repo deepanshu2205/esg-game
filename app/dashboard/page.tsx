@@ -79,8 +79,12 @@ export default function DashboardPage() {
     <RequireAuth>
     <div className="space-y-6">
       <Confetti show={showConfetti} />
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm uppercase tracking-[0.4em] text-white/60">Mission control</p>
+          <h1 className="text-3xl font-bold mt-1">ESG performance dashboard</h1>
+          <p className="text-white/70 mt-2">Monitor KPIs, jump into simulations, and unlock badges across the ESG pillars.</p>
+        </div>
         <AvatarBadges />
       </div>
 
@@ -122,6 +126,8 @@ export default function DashboardPage() {
             <div className="card-header text-white/60">Quick Actions</div>
             <div className="mt-3 flex flex-col gap-2">
               <Link href="/ai" className="btn btn-primary text-center">Ask AI Advisor</Link>
+              <Link href="/game" className="btn btn-ghost text-center">Resume Game Session</Link>
+              <Link href="/leaderboard" className="btn btn-ghost text-center">View Leaderboard</Link>
             </div>
           </div>
         </div>

@@ -100,26 +100,54 @@ insert into badges (id, name, description, icon)
 select 'ethics_enforcer','Ethics Enforcer','Achieved ESG score >= 90','shield'
 where not exists (select 1 from badges where id='ethics_enforcer');
 
+insert into badges (id, name, description, icon)
+select 'emissions_optimizer','Emissions Optimizer','Optimized emissions in the Environment module','leaf'
+where not exists (select 1 from badges where id='emissions_optimizer');
+
 -- Migration additions: add missing constraints and indexes to improve integrity and performance
 -- Ensure users can't be awarded the same badge multiple times at the DB level
-alter table if exists user_badges
-  add constraint user_badge_unique unique (user_id, badge_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_badge_unique') THEN
+    ALTER TABLE user_badges ADD CONSTRAINT user_badge_unique UNIQUE (user_id, badge_id);
+  END IF;
+END$$;
 
 -- Add foreign key relationships where sensible
-alter table if exists sessions
-  add constraint fk_sessions_user foreign key (user_id) references users(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_sessions_user') THEN
+    ALTER TABLE sessions ADD CONSTRAINT fk_sessions_user FOREIGN KEY (user_id) REFERENCES users(id);
+  END IF;
+END$$;
 
-alter table if exists transactions
-  add constraint fk_transactions_session foreign key (session_id) references sessions(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transactions_session') THEN
+    ALTER TABLE transactions ADD CONSTRAINT fk_transactions_session FOREIGN KEY (session_id) REFERENCES sessions(id);
+  END IF;
+END$$;
 
-alter table if exists audits
-  add constraint fk_audits_session foreign key (session_id) references sessions(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_audits_session') THEN
+    ALTER TABLE audits ADD CONSTRAINT fk_audits_session FOREIGN KEY (session_id) REFERENCES sessions(id);
+  END IF;
+END$$;
 
-alter table if exists user_badges
-  add constraint fk_user_badges_user foreign key (user_id) references users(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_badges_user') THEN
+    ALTER TABLE user_badges ADD CONSTRAINT fk_user_badges_user FOREIGN KEY (user_id) REFERENCES users(id);
+  END IF;
+END$$;
 
-alter table if exists scenarios
-  add constraint fk_scenarios_user foreign key (user_id) references users(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_scenarios_user') THEN
+    ALTER TABLE scenarios ADD CONSTRAINT fk_scenarios_user FOREIGN KEY (user_id) REFERENCES users(id);
+  END IF;
+END$$;
 
 -- Helpful indexes for common lookup patterns
 create index if not exists idx_sessions_user_id on sessions(user_id);

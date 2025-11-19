@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
 
 type Q = { id: string; q: string; choices: string[]; answerIndex: number };
 
@@ -36,7 +35,6 @@ export default function SocialQuiz() {
     const pct = Math.round((correct / total) * 100);
     setScore(pct);
     setCompleted(true);
-    // persist scenario result
     persistResult(pct, correct, total).catch((e) => console.error(e));
   }
 
@@ -54,32 +52,62 @@ export default function SocialQuiz() {
     }
   }
 
+  const progress = Math.round(((index + (completed ? 1 : 0)) / QUESTIONS.length) * 100);
+
   return (
-    <div className="space-y-4">
-      {!completed ? (
+    <div className="mini-game-card card-animated">
+      <div className="mini-game-header">
         <div>
-          <div className="font-semibold">Social Module: Quick Quiz</div>
-          <div className="mt-2 p-3 bg-white/4 rounded">
-            <div className="text-sm">{QUESTIONS[index].q}</div>
-            <div className="mt-3 space-y-2">
-              {QUESTIONS[index].choices.map((c, i) => (
-                <button key={i} onClick={() => select(i)} className={`w-full text-left px-3 py-2 rounded ${answers[QUESTIONS[index].id] === i ? 'bg-blue-600' : 'bg-white/6'}`}>
-                  {c}
-                </button>
-              ))}
+          <p className="mini-game-label">Scenario quiz</p>
+          <h4 className="mini-game-title">Social Compass</h4>
+        </div>
+        <span className="score-chip">{completed ? `Score: ${score}%` : `Step ${index + 1} / ${QUESTIONS.length}`}</span>
+      </div>
+      <p className="mini-game-copy">Choose the most responsible response for each workplace or community situation.</p>
+
+      {!completed ? (
+        <div className="quiz-card">
+          <div className="quiz-question">
+            <p>{QUESTIONS[index].q}</p>
+          </div>
+          <div className="quiz-options">
+            {QUESTIONS[index].choices.map((c, i) => (
+              <button
+                key={i}
+                onClick={() => select(i)}
+                className={`quiz-option ${answers[QUESTIONS[index].id] === i ? "active" : ""}`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          <div className="mini-game-actions">
+            <div className="progress-bar">
+              <div className="progress-fill" style={{ width: `${progress}%` }} />
             </div>
-            <div className="mt-3 flex justify-end">
-              <button onClick={next} className="bg-yellow-400 px-4 py-2 rounded">{index < QUESTIONS.length - 1 ? 'Next' : 'Finish'}</button>
-            </div>
+            <button onClick={next} className="btn btn-primary">
+              {index < QUESTIONS.length - 1 ? "Next scenario" : "Finish quiz"}
+            </button>
           </div>
         </div>
       ) : (
-        <div className="p-3 bg-white/4 rounded">
-          <div className="font-semibold">Quiz Complete</div>
-          <div className="mt-2">Score: {score}%</div>
-          <div className="mt-2 text-sm text-white/60">Results saved to your scenarios (if authenticated).</div>
-          <div className="mt-3">
-            <button onClick={() => { setCompleted(false); setIndex(0); setAnswers({}); setScore(null); }} className="bg-white/6 px-3 py-1 rounded">Retry</button>
+        <div className="quiz-card">
+          <div className="quiz-question">
+            <p>Quiz complete</p>
+          </div>
+          <p className="text-white/70 text-sm">Results saved to your scenarios{saving ? "…" : "."}</p>
+          <div className="mini-game-actions">
+            <button
+              onClick={() => {
+                setCompleted(false);
+                setIndex(0);
+                setAnswers({});
+                setScore(null);
+              }}
+              className="btn btn-ghost"
+            >
+              Retry quiz
+            </button>
           </div>
         </div>
       )}

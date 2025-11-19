@@ -2,36 +2,47 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import RequireAuth from "@/app/components/RequireAuth";
 
 type KPI = { carbon: number; profit: number; reputation: number };
+const INITIAL_KPI: KPI = { carbon: 100, profit: 1000, reputation: 50 };
 
 export default function GamePage() {
-	const [kpi, setKpi] = useState<KPI>({ carbon: 100, profit: 1000, reputation: 50 });
+	const [kpi, setKpi] = useState<KPI>(() => ({ ...INITIAL_KPI }));
 	const [sessionId, setSessionId] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
+	const [accessToken, setAccessToken] = useState<string | null>(null);
+	const [userId, setUserId] = useState<string | null>(null);
 
-	// Create a new session when page loads
 	useEffect(() => {
 		(async () => {
-			// Try to include the authenticated user id if present; otherwise create an anonymous session.
-			let userId: string | null = null;
-			let accessToken: string | null = null;
 			try {
-				const userResp = await supabase.auth.getUser();
-				userId = (userResp as any)?.data?.user?.id ?? null;
-				const sessionResp = await supabase.auth.getSession();
-				accessToken = (sessionResp as any)?.data?.session?.access_token ?? null;
-			} catch (e) {
-				// ignore - proceed as anonymous
+				const [{ data: { user } }, { data: { session } }] = await Promise.all([
+					supabase.auth.getUser(),
+					supabase.auth.getSession()
+				]);
+				setUserId(user?.id ?? null);
+				setAccessToken(session?.access_token ?? null);
+			} catch (err) {
+				console.error("Failed to load auth state", err);
 			}
+		})();
+	}, []);
 
-			const headers: Record<string, string> = { "Content-Type": "application/json" };
-			if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+	// Create a new authenticated session when auth data is available
+	useEffect(() => {
+		if (!userId || !accessToken || sessionId) return;
+
+		(async () => {
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${accessToken}`
+			};
 
 			const res = await fetch("/api/session", {
 				method: "POST",
 				headers,
-				body: JSON.stringify(userId ? { userId, kpi } : { kpi })
+				body: JSON.stringify({ userId, kpi: INITIAL_KPI })
 			});
 
 			if (res.ok) {
@@ -41,24 +52,42 @@ export default function GamePage() {
 				console.warn("Failed to create session", await res.text());
 			}
 		})();
-	}, []);
+	}, [userId, accessToken, sessionId]);
 
 
 	// Apply an action (upgrade machine, train staff, waste sorting)
+	function requireAccessToken() {
+		if (!accessToken) {
+			throw new Error("No active session token");
+		}
+		return accessToken;
+	}
+
 	async function doAction(action: string) {
 		if (!sessionId) return alert("No session started yet!");
 		setLoading(true);
+		try {
+			const token = requireAccessToken();
+			const res = await fetch("/api/action", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify({ sessionId, action, currentKpi: kpi })
+			});
 
-		const res = await fetch("/api/action", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ sessionId, action, currentKpi: kpi })
-		});
-
-		const data = await res.json();
-		if (data.newKpi) setKpi(data.newKpi);
-
-		setLoading(false);
+			const data = await res.json();
+			if (res.ok && data.newKpi) {
+				setKpi(data.newKpi);
+			} else {
+				alert(data.error ?? "Failed to apply action");
+			}
+		} catch (err: any) {
+			alert(err.message ?? String(err));
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	// Run a simulation using the AI endpoint before performing an action
@@ -69,20 +98,23 @@ export default function GamePage() {
 		if (!sessionId) return alert("No session started yet!");
 		setSimLoading(true);
 		try {
+			const token = requireAccessToken();
 			const payload = { baseline: kpi, action };
 			const res = await fetch("/api/ai", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`
+				},
 				body: JSON.stringify({ action: "simulate", query: JSON.stringify(payload) })
 			});
 
 			const d = await res.json();
 			// api returns { action: 'simulate', simulation: {...}, raw }
-			if (d.simulation) {
+			if (res.ok && d.simulation) {
 				setSimulation(d.simulation);
 			} else {
-				// fallback: show raw
-				setSimulation({ explanation: d.raw ?? d.response ?? "No response" });
+				setSimulation({ explanation: d.raw ?? d.response ?? d.error ?? "No response" });
 			}
 		} catch (err) {
 			console.error("simulate error", err);
@@ -93,10 +125,11 @@ export default function GamePage() {
 	}
 
 	return (
+		<RequireAuth>
 		<div className="space-y-6">
 			<h1 className="text-2xl font-bold">Game</h1>
 
-			<div className="grid grid-cols-3 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				<div className="card">
 					<div className="text-white/70">Carbon</div>
 					<div className="text-2xl">{kpi.carbon}</div>
@@ -113,26 +146,26 @@ export default function GamePage() {
 				</div>
 			</div>
 
-			<div className="flex gap-3">
-				<button onClick={() => doAction("upgrade machine")} disabled={loading} className="bg-yellow-400 px-4 py-2 rounded">Upgrade machine</button>
-				<button onClick={() => doAction("train staff")} disabled={loading} className="bg-yellow-400 px-4 py-2 rounded">Train staff</button>
-				<button onClick={() => doAction("waste sorting")} disabled={loading} className="bg-yellow-400 px-4 py-2 rounded">Waste sorting</button>
+			<div className="flex flex-col md:flex-row gap-3">
+				<button onClick={() => doAction("upgrade machine")} disabled={loading} className="btn btn-primary flex-1">Upgrade machine</button>
+				<button onClick={() => doAction("train staff")} disabled={loading} className="btn btn-primary flex-1">Train staff</button>
+				<button onClick={() => doAction("waste sorting")} disabled={loading} className="btn btn-primary flex-1">Waste sorting</button>
 			</div>
-			<div className="flex gap-3">
+			<div className="flex flex-col gap-3">
 				<div className="space-y-2">
-					<div className="flex gap-2">
-						<button onClick={() => doAction("upgrade machine")} disabled={loading} className="bg-yellow-400 px-4 py-2 rounded">Apply: Upgrade machine</button>
-						<button onClick={() => simulateAction("upgrade machine")} disabled={simLoading} className="bg-white/6 px-3 py-2 rounded">Simulate</button>
+					<div className="flex flex-col sm:flex-row gap-2">
+						<button onClick={() => doAction("upgrade machine")} disabled={loading} className="btn btn-primary flex-1">Apply: Upgrade machine</button>
+						<button onClick={() => simulateAction("upgrade machine")} disabled={simLoading} className="btn btn-ghost flex-1">Simulate</button>
 					</div>
 
-					<div className="flex gap-2">
-						<button onClick={() => doAction("train staff")} disabled={loading} className="bg-yellow-400 px-4 py-2 rounded">Apply: Train staff</button>
-						<button onClick={() => simulateAction("train staff")} disabled={simLoading} className="bg-white/6 px-3 py-2 rounded">Simulate</button>
+					<div className="flex flex-col sm:flex-row gap-2">
+						<button onClick={() => doAction("train staff")} disabled={loading} className="btn btn-primary flex-1">Apply: Train staff</button>
+						<button onClick={() => simulateAction("train staff")} disabled={simLoading} className="btn btn-ghost flex-1">Simulate</button>
 					</div>
 
-					<div className="flex gap-2">
-						<button onClick={() => doAction("waste sorting")} disabled={loading} className="bg-yellow-400 px-4 py-2 rounded">Apply: Waste sorting</button>
-						<button onClick={() => simulateAction("waste sorting")} disabled={simLoading} className="bg-white/6 px-3 py-2 rounded">Simulate</button>
+					<div className="flex flex-col sm:flex-row gap-2">
+						<button onClick={() => doAction("waste sorting")} disabled={loading} className="btn btn-primary flex-1">Apply: Waste sorting</button>
+						<button onClick={() => simulateAction("waste sorting")} disabled={simLoading} className="btn btn-ghost flex-1">Simulate</button>
 					</div>
 				</div>
 			</div>
@@ -157,15 +190,26 @@ export default function GamePage() {
 									};
 									try {
 										setLoading(true);
-										const res = await fetch(`/api/action`, {
-											method: "POST",
-											headers: { "Content-Type": "application/json" },
-											body: JSON.stringify({ sessionId, action: "apply_simulation", currentKpi: kpi, newKpi: computed })
-										});
-										const data = await res.json();
-										if (data.newKpi) setKpi(data.newKpi);
-										// clear simulation after apply
-										setSimulation(null);
+										try {
+											const token = requireAccessToken();
+											const res = await fetch(`/api/action`, {
+												method: "POST",
+												headers: {
+													"Content-Type": "application/json",
+													Authorization: `Bearer ${token}`
+												},
+												body: JSON.stringify({ sessionId, action: "apply_simulation", currentKpi: kpi, newKpi: computed })
+											});
+											const data = await res.json();
+											if (res.ok && data.newKpi) {
+												setKpi(data.newKpi);
+												setSimulation(null);
+											} else {
+												alert(data.error ?? "Failed to apply simulation");
+											}
+										} catch (err: any) {
+											alert(err.message ?? String(err));
+										}
 									} catch (e) {
 										console.error(e);
 									} finally {
@@ -179,6 +223,7 @@ export default function GamePage() {
 					)}
 				</div>
 			)}
-			</div>
-		);
-	}
+		</div>
+		</RequireAuth>
+	);
+}

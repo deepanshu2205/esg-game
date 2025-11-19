@@ -38,33 +38,53 @@ export default function WasteSorter({ onWin }: { onWin?: () => void }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mini-game-card card-animated">
       <Confetti show={showConfetti} />
-      <div className="text-sm text-white/60">Sort the items into the correct bin</div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="mini-game-header">
         <div>
-          <div className="space-y-2">
-            {items.map((it) => (
-              <div key={it.id} className="p-2 bg-white/3 rounded flex items-center justify-between">
-                <div>{it.name}</div>
-                <div className="flex gap-2">
-                  <button onClick={() => pick(it.id, "recycle")} className={`px-2 py-1 rounded ${choices[it.id] === "recycle" ? "bg-green-600" : "bg-white/6"}`}>Recycle</button>
-                  <button onClick={() => pick(it.id, "trash")} className={`px-2 py-1 rounded ${choices[it.id] === "trash" ? "bg-red-600" : "bg-white/6"}`}>Trash</button>
-                </div>
+          <p className="mini-game-label">Mini-game</p>
+          <h4 className="mini-game-title">Waste Sorter</h4>
+        </div>
+        <span className="score-chip">80%+ to win badge</span>
+      </div>
+      <p className="mini-game-copy">Tap a bin to classify each item. Beat 80% accuracy to unlock the Waste Sorter Master badge.</p>
+
+      <div className="mini-game-layout">
+        <div className="mini-game-list">
+          {items.map((it) => (
+            <div key={it.id} className="mini-game-row">
+              <div className="item-name">{it.name}</div>
+              <div className="game-pill-group">
+                <button
+                  onClick={() => pick(it.id, "recycle")}
+                  className={`game-pill ${choices[it.id] === "recycle" ? "active recycle" : ""}`}
+                >
+                  Recycle
+                </button>
+                <button
+                  onClick={() => pick(it.id, "trash")}
+                  className={`game-pill ${choices[it.id] === "trash" ? "active trash" : ""}`}
+                >
+                  Trash
+                </button>
               </div>
-            ))}
-          </div>
-          <div className="mt-3">
-            <button onClick={check} className="bg-green-500 px-4 py-2 rounded">Check</button>
+            </div>
+          ))}
+          <div className="mini-game-actions">
+            <button onClick={check} className="btn btn-primary w-full sm:w-auto">
+              Check answers
+            </button>
           </div>
         </div>
 
-        <div>
-          <div className="p-3 bg-white/4 rounded">
-            <div className="text-sm font-semibold">Bins</div>
-            <div className="mt-2 text-xs text-white/60">Recycle: Items accepted for recycling (plastic, glass, paper)</div>
-            <div className="mt-2 text-xs text-white/60">Trash: General waste or hazardous items</div>
-          </div>
+        <div className="mini-game-sidecard">
+          <p className="text-sm font-semibold text-white">Bins refresher</p>
+          <p className="text-xs text-white/70 mt-2">
+            <strong>Recycle:</strong> Rinsed plastic, glass, paper, or metal packaging.
+          </p>
+          <p className="text-xs text-white/70 mt-2">
+            <strong>Trash:</strong> Contaminated food packaging, batteries, mixed waste, or items with hazard labels.
+          </p>
         </div>
       </div>
     </div>
