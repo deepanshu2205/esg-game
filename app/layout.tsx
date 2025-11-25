@@ -5,7 +5,7 @@ import NavLinksClient from "./components/NavLinksClient";
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "ESG Game - Full",
+  title: "AEGIS SME",
   description: "Minimal ESG training game with Supabase + Next.js + OpenAI"
 };
 

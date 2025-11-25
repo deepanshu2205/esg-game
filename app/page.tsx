@@ -27,7 +27,7 @@ export default function Home() {
             See the impact instantly.
           </h1>
           <p className="text-white/70 mt-4 max-w-2xl">
-            ESG Game combines Supabase auth, real-time KPIs, and AI-powered simulations so your team can practice
+            AEGIS SME combines Supabase auth, real-time KPIs, and AI-powered simulations so your team can practice
             sustainability strategy in a safe sandbox.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 mt-6">
@@ -81,29 +81,6 @@ export default function Home() {
             <p className="text-white/70 mt-2">{card.body}</p>
           </div>
         ))}
-      </section>
-
-      <section className="card card-animated">
-        <div className="split-panel items-center">
-          <div>
-            <h3 className="text-2xl font-semibold">Ready to embed ESG into your next workshop?</h3>
-            <p className="text-white/70 mt-2">
-              Spin up Supabase, run migrations, and invite teammates with just a few commands.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3">
-            <code className="bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-sm text-white/80">
-              npm install
-              <br />
-              npm run migrate
-              <br />
-              npm run dev
-            </code>
-            <Link href="/game" className="btn btn-primary text-center">
-              Explore the game
-            </Link>
-          </div>
-        </div>
       </section>
     </div>
   );
