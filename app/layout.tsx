@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <div className="container topbar">
               <div>
                 <Link href="/" className="brand">
-                  ESG Game
+                  AGEIS SME GAME
                   <span className="brand-subtitle">Learn & act on ESG scenarios</span>
                 </Link>
               </div>
@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
           <footer className="footer">
             <div className="container">
-              Built with Next.js, Supabase & OpenAI · ESG Game © {new Date().getFullYear()}
+              Built with love at SGT University · ESG Game © {new Date().getFullYear()}
             </div>
           </footer>
         </div>
